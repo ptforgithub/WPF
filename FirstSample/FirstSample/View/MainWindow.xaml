@@ -1,0 +1,22 @@
+﻿<Window x:Class="FirstSample.View.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:FirstSample"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="350" Width="525">
+    <Grid>
+        <Button x:Name="button" Content="Save" 
+                Command="{Binding SaveCommand}" CommandParameter="Save"
+                HorizontalAlignment="Left" VerticalAlignment="Top" Width="75"/>
+        <Button x:Name="button1" Content="Save As"
+              Command="{Binding SaveAsCommand}" CommandParameter="SaveAs"
+              HorizontalAlignment="Left" VerticalAlignment="Top" Width="75"  Margin="0,25,0,0"/>
+        <TextBlock x:Name="textBlock" 
+                   Text="{Binding ButtonClickedMessage}" 
+                   HorizontalAlignment="Left" TextWrapping="Wrap" 
+                   VerticalAlignment="Top" Margin="0,51,0,0" Width="244"/>
+
+    </Grid>
+</Window>
