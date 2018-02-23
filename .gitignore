@@ -1,3 +1,9 @@
+/**/obj/**/*
+/**/bin/**/*
+*.suo
+/**/Debug/**/*
+
+
 # Prerequisites
 *.d
 
