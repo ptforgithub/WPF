@@ -2,3 +2,7 @@ Not in order of usefulness:
 (#)
 https://docs.microsoft.com/en-us/dotnet/framework/wpf/getting-started/walkthrough-my-first-wpf-desktop-application
   - Example of NavigationWindow with three pages
+  - Creating Styles under Application.Resources in App.XAML
+  - Binding Data to Control - XmlDataProvider
+  - Creating Resource for a specific element. Eg <Grid.Resources>
+  - DataTemplate
