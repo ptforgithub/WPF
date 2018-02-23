@@ -9,6 +9,8 @@ WPF
   - What is DependencyProperty
   - What Layout Containers are available: Canvas, Grid, DockPanel, StackPanel, VirtualizingStackPanel, WrapPanel
   - Styling and Templating
+  - What is a DataTemplate - For eg: ..defines how to display the data in the ListBox
+  - ItemsSource
 
 Styles
   - The appearance of various elements can often be the same for all elements of the same type in a UI. 
@@ -42,3 +44,13 @@ Styles
   
   And applied to elements like so:
   <Button Grid.Column="1" Grid.Row="3" Click="Button_Click" Style="{StaticResource buttonStyle}">View</Button>
+  
+DataTemplate
+<!-- Name item template -->
+<DataTemplate x:Key="nameItemTemplate">
+    <Label Content="{Binding XPath=@Name}"/>
+</DataTemplate>
+<ListBox Name="peopleListBox" Grid.Column="1" Grid.Row="2" 
+         ItemsSource="{Binding Source={StaticResource ExpenseDataSource}, XPath=Person}"
+         ItemTemplate="{StaticResource nameItemTemplate}">
+</ListBox>
