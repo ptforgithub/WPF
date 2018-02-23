@@ -12,6 +12,16 @@ WPF
   - What is a DataTemplate - For eg: ..defines how to display the data in the ListBox
   - ItemsSource
   - Control Template vs Data Template
+  - ObservableCollection, INotifyCollectionChanged, ICollectionView
+    - The view model should implement a read-only property that returns an ICollectionView reference so that 
+    controls in the view can data bind to the collection view object and interact with it. 
+    All WPF controls that derive from the ItemsControl base class can automatically interact with ICollectionView classes.
+  - What are the options to bind a view model to a view
+    - Create View Model using XAML
+    - Create View Model programmatically
+    - Creating the View Model Using a View Model Locator (Prism)
+    - Creating a View Defined as a Data Template
+  - What is <ContentControl>
 
 Styles
   - The appearance of various elements can often be the same for all elements of the same type in a UI. 
@@ -45,7 +55,7 @@ Styles
   
   And applied to elements like so:
   <Button Grid.Column="1" Grid.Row="3" Click="Button_Click" Style="{StaticResource buttonStyle}">View</Button>
-  
+===============  
 DataTemplate
 <!-- Name item template -->
 <DataTemplate x:Key="nameItemTemplate">
@@ -55,3 +65,17 @@ DataTemplate
          ItemsSource="{Binding Source={StaticResource ExpenseDataSource}, XPath=Person}"
          ItemTemplate="{StaticResource nameItemTemplate}">
 </ListBox>
+===================
+Creating a View Defined as a Data Template
+A view can be defined as a data template and associated with a view model type. 
+Data templates can be defined as resources, or they can be defined inline within the control that will display 
+the view model. The "content" of the control is the view model instance, and the data template is used to 
+visually represent it. WPF will automatically instantiate the data template and set its data context to the view model 
+instance at run time. This technique is an example of a situation in which the view model is instantiated first, 
+followed by the creation of the view.
+Data templates are flexible and lightweight. The UI designer can use them to easily define the visual representation 
+of a view model without requiring any complex code. Data templates are restricted to views that do not require any 
+UI logic (code-behind).
+
+
+
