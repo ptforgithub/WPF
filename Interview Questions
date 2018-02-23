@@ -11,6 +11,7 @@ WPF
   - Styling and Templating
   - What is a DataTemplate - For eg: ..defines how to display the data in the ListBox
   - ItemsSource
+  - Control Template vs Data Template
 
 Styles
   - The appearance of various elements can often be the same for all elements of the same type in a UI. 
