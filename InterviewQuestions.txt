@@ -1,0 +1,154 @@
+MVVM
+  - What is ICommand. Implement DelegateCommand<T>. Call a click handler with Command Parameters
+  - INotifyPropertyChanged
+WPF
+  - What is Binding ? What is ElementName binding
+  - Bind Button command with parameters
+  - What is an AttachedProperty ? Simplest example - <Grid> has property 'Row', which may be used like so:
+  <Button Grid.Column="0" Grid.Row="2" Margin="0,10,0,0" Width="125" Height="25" HorizontalAlignment="Right">View</Button>
+  - What is DependencyProperty
+  - What Layout Containers are available: Canvas, Grid, DockPanel, StackPanel, VirtualizingStackPanel, WrapPanel
+  - Styling and Templating
+  - What is a DataTemplate - For eg: ..defines how to display the data in the ListBox
+  - ItemsSource
+  - Control Template vs Data Template
+  - ObservableCollection, INotifyCollectionChanged, ICollectionView
+    - The view model should implement a read-only property that returns an ICollectionView reference so that 
+    controls in the view can data bind to the collection view object and interact with it. 
+    All WPF controls that derive from the ItemsControl base class can automatically interact with ICollectionView classes.
+  - What are the options to bind a view model to a view
+    - Create View Model using XAML
+    - Create View Model programmatically
+    - Creating the View Model Using a View Model Locator (Prism)
+    - Creating a View Defined as a Data Template
+  - What is <ContentControl>
+  - ViewModel first (think DataTemplate)
+  - View first (think Unity Depedency Injection container)
+  - What is a behaviour
+  - What is a trigger (Microsoft.Expression.Interactivity namespace shipped with Blend for Visual Studio)
+  - InvokeCommandAction - There is a class in the Blend SDK by this name, and there is a class in Prism by the same name
+  - Thread Affinity - Dispatcher.BeginInvoke(), SynchronizationContext (not so popular in WPF)
+
+
+Styles
+  - The appearance of various elements can often be the same for all elements of the same type in a UI. 
+  UI uses styles to make appearances reusable across multiple elements. 
+  The reusability of styles helps to simplify XAML creation and management
+  - Styles are written as resources in App.XAML file, Eg
+  <Application x:Class="FirstSample.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:FirstSample.View"
+             StartupUri="View\MainWindow.xaml">
+    <Application.Resources>
+
+        <!-- Button style -->
+        <Style x:Key="buttonStyle" TargetType="{x:Type Button}">
+            <Setter Property="Width" Value="125" />
+            <Setter Property="Height" Value="25" />
+            <Setter Property="Margin" Value="0,10,0,0" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+        </Style>
+
+        <!-- Label style -->
+        <Style x:Key="labelStyle" TargetType="{x:Type Label}">
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Margin" Value="0,0,0,5" />
+        </Style>
+    </Application.Resources>
+  </Application>
+  
+  And applied to elements like so:
+  <Button Grid.Column="1" Grid.Row="3" Click="Button_Click" Style="{StaticResource buttonStyle}">View</Button>
+===============  
+DataTemplate
+<!-- Name item template -->
+<DataTemplate x:Key="nameItemTemplate">
+    <Label Content="{Binding XPath=@Name}"/>
+</DataTemplate>
+<ListBox Name="peopleListBox" Grid.Column="1" Grid.Row="2" 
+         ItemsSource="{Binding Source={StaticResource ExpenseDataSource}, XPath=Person}"
+         ItemTemplate="{StaticResource nameItemTemplate}">
+</ListBox>
+===================
+Creating a View Defined as a Data Template
+A view can be defined as a data template and associated with a view model type. 
+Data templates can be defined as resources, or they can be defined inline within the control that will display 
+the view model. The "content" of the control is the view model instance, and the data template is used to 
+visually represent it. WPF will automatically instantiate the data template and set its data context to the view model 
+instance at run time. This technique is an example of a situation in which the view model is instantiated first, 
+followed by the creation of the view.
+Data templates are flexible and lightweight. The UI designer can use them to easily define the visual representation 
+of a view model without requiring any complex code. Data templates are restricted to views that do not require any 
+UI logic (code-behind).
+==================
+Commands, UI Triggers, Actions, and Behaviors
+When a view is implemented with its logic in the code-behind file, you add event handlers to service UI interactions. 
+However, when you use MVVM, the view model cannot directly handle events raised by the UI. 
+To route UI gesture events to the view model, you can use commands or UI triggers, actions, and behaviors.
+=================
+UI Triggers, Actions, and Behaviors
+Triggers, actions, and behaviors are part of the Microsoft.Expression.Interactivity namespace and are shipped with Blend for Visual Studio 2013. They are also part of the Blend SDK. Triggers, actions, and behaviors provide a comprehensive API for handling UI events or commands, and then routing them to the ICommand properties methods exposed by the DataContext. 
+===================
+Interaction Triggers and Commands
+An alternative approach to commands is to use Blend for Visual Studio 2013 interaction triggers and the InvokeCommandAction action.
+
+XAML
+<Button Content="Submit" IsEnabled="{Binding CanSubmit}">
+    <i:Interaction.Triggers>
+        <i:EventTrigger EventName="Click">
+            <i:InvokeCommandAction Command="{Binding SubmitCommand}"/>
+        </i:EventTrigger>
+    </i:Interaction.Triggers>
+</Button>
+This approach can be used for any control to which you can attach an interaction trigger. It is especially useful if you want to attach a command to a control that does not implement the ICommandSource interface, or when you want to invoke the command on an event other than the default event. 
+Again, if you need to supply parameters for your command, you can use the CommandParameter property.
+==============================
+Command-Enabled Controls vs. Behaviors
+WPF controls that support commands allow you to declaratively hook up a control to a command. These controls will invoke the specified command 
+when the user interacts with the control in a specific way. For example, for a Button control, the command will be invoked when the user 
+clicks the button. This event associated with the command is fixed and cannot be changed. 
+Behaviors also allow you to hook up a control to a command in a declarative fashion. However, behaviors can be associated with a range of 
+events raised by the control, and they can be used to conditionally invoke an associated command object or a command method in the view model. 
+In other words, behaviors can address many of the same scenarios as command-enabled controls, and they may provide a greater degree of flexibility and control.
+You will need to choose when to use command-enabled controls and when to use behaviors, as well as which kind of behavior to use. 
+If you prefer to use a single mechanism to associate controls in the view with functionality in the view model or for consistency, 
+you might consider using behaviors, even for controls that inherently support commands.
+If you only need to use command-enabled controls to invoke commands on the view model, and if you are happy with the default events to 
+invoke the command, behaviors may not be required. Similarly, if your developers or UI designers will not be using Blend for Visual Studio 2013, 
+you may favor command-enabled controls (or custom attached behaviors) because of the additional syntax required for Blend behaviors.
+========================
+Passing EventArgs Parameters to the Command
+When you need to invoke a command in response to an event raised by a control located in the view, you can use Prism’s InvokeCommandAction. Prism’s InvokeCommandAction differs from the class of the same name in the Blend SDK in two ways. First, the Prism InvokeCommandAction updates the enabled state of the associated control based on the return value of the command’s CanExecute method. Second, the Prism InvokeCommandAction uses the EventArgs parameter passed to it from the parent trigger, passing it to the associated command if the CommandParameter is not set.
+
+Sometimes you need to pass a parameter to the command that comes from the parent trigger, such as the EventArgs from the EventTrigger. In that scenario you cannot use Blend’s InvokeCommandAction action
+================================
+Handling Asynchronous Interactions
+Because the UI can be updated only in the UI thread, you will often need to update the UI by dispatching a request on the UI thread.
+Retrieving Data and Interacting with Web Services
+When interacting with web services or other remote access technologies, you will often encounter the IAsyncResult pattern. In this pattern, instead of invoking a method, such as GetQuestionnaire, you use the pair of methods BeginGetQuestionnaire and EndGetQuestionnaire.
+Because the response usually is not on the UI thread, if you plan to modify anything that will affect UI state, you will need to dispatch the 
+response to the UI thread using either the thread Dispatcher or the SynchronizationContext objects. 
+In WPF, you will commonly use the dispatcher
+var dispatcher = System.Windows.Deployment.Current.Dispatcher;
+if (dispatcher.CheckAccess())
+{
+    QuestionnaireView.DataContext = questionnaire;
+}
+else
+{
+    dispatcher.BeginInvoke(
+          () => { Questionnaire.DataContext = questionnaire; });
+}
+
+
+
+
+
+
+
+
+
+
