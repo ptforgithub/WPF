@@ -1,0 +1,59 @@
+﻿<UserControl x:Class="FlexGrid.UI.Views.Canvas.FlexGridCanvas"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+             xmlns:il="clr-namespace:Microsoft.Expression.Interactivity.Layout;assembly=Microsoft.Expression.Interactions"
+             xmlns:uiEntityViews="clr-namespace:FlexGrid.UI.Views.UIEntityViews"
+             xmlns:behaviours="clr-namespace:FlexGrid.UI.Behaviours"
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300">
+    
+    
+    <!--This Iteraction Trigger executes the command but doesnt send the MouseEventArgs as command parameter
+    And I dont know a way of sending the mouse args as parameter. So we'll use an attached property instead
+    I created an attached property called MouseDownCommand (see MouseBehaviour.cs)
+    <i:Interaction.Triggers>
+        <i:EventTrigger EventName="MouseDown">
+            <i:InvokeCommandAction Command="{Binding CommandCreateNewSite}" CommandParameter="{Binding}" />
+        </i:EventTrigger>
+    </i:Interaction.Triggers>-->
+    
+    
+    
+    <Grid Margin="4,4,2,2">
+        <!--<ListBox ItemsSource="{Binding OnepSiteWrappers}" />-->
+        <ListBox ItemsSource="{Binding OnepSiteWrappers}" behaviours:MouseBehaviour.MouseDownCommand="{Binding CommandCreateNewSite}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <uiEntityViews:OnepSiteView />
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+            <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <Canvas>
+
+                    </Canvas>
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="{x:Type ListBoxItem}">
+                    <Setter Property="Canvas.Left" Value="{Binding X}" />
+                    <Setter Property="Canvas.Top" Value="{Binding Y}" />
+
+                     <!--This setter prevents the drawing of default blue selection around the listbox item that is selected
+                    Not that I completely understand this. Note that we've already defined a data template for the list box item
+                    However, these two things are working together-->
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                <ContentPresenter  />
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListBox.ItemContainerStyle>
+        </ListBox>
+    </Grid>
+</UserControl>

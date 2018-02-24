@@ -1,0 +1,171 @@
+(#) I first tried to setup UI as a different project (i.e. not the startup project), but that kept giving me problems with XAML etc, and after resolving a few, I reverted to UI being the main project
+
+(#) Interactivity and Interaction DLLs
+		You need to reference them in the main project, not just the control libraries.
+		Otherwise there is a runtime error
+		A first chance exception of type 'System.Windows.Markup.XamlParseException' occurred in PresentationFramework.dll
+		Additional information: Could not load file or assembly 'System.Windows.Interactivity, PublicKeyToken=31bf3856ad364e35' or one of its dependencies. The system cannot find the file specified.
+		If there is a handler for this exception, the program may be safely continued.
+		Also, you don't need to download any 3rd party .. the ones in Framework 4.5 work
+
+(#) UndoManager ver 1 implemented .. no concept of sequence yet, but I've tested that a command within a command works, and then we have 2 operations on the stack, so we must undo twice
+
+(#) CommandManager.RequerySuggested
+        Consider a command in your view model
+        public ICommand CloseNetworkCommand
+        {
+            get
+            {
+                if (_closeNetworkCommand == null)
+                {
+                    _closeNetworkCommand = new DelegateCommand(
+                        () =>
+                        {
+
+                        },
+                        () => { return _onepNetworkWrapper != null; }
+                        );
+                }
+                return _closeNetworkCommand;
+            }
+        }
+
+		Now, the _onepNetworkWrapper is being set via another command, say NewNetworkCommand. 
+		Even after _onepNetworkWrapper is set to some non-null value, the CanExecute is not evaluated again. 
+		To remedy this, we put the following in DelegateCommand class (or whichever class is implementing the ICommand)
+
+        public event EventHandler CanExecuteChanged
+        {
+            add { CommandManager.RequerySuggested += value; }
+            remove { CommandManager.RequerySuggested -= value; }
+        }
+
+
+
+(#) If MainWindow.xaml contains UICanvas.xaml, then MainWindow c'tor is called before UICanvas' c'tor
+		but Canvas' InitializeComponent() finishes before MainWindow's InitializeComponent()
+		That should be expected, since InitializeComponent() parses the XAML and creates objects, so obviously inner objects must be created before the container ones
+
+(#) About Event Triggers
+		<i:Interaction.Triggers>
+			<i:EventTrigger EventName="MouseDown">
+				<i:InvokeCommandAction Command="{Binding CommandCreateNewSite}" CommandParameter="{Binding}" />
+			</i:EventTrigger>
+		</i:Interaction.Triggers>
+
+		When you use MouseDown like this, the CommandParameter will not give you MouseEventArgs
+		The solution is to use some attached kind of thing (behaviour), wherein you get an opportunity to capture the MouseEventArgs
+		And create your own parameter to send to the command
+		Something like this:
+
+		behaviours:MouseBehaviour.MouseDownCommand="{Binding CommandCreateNewSite}"
+
+		In 1P, there's something called EventTriggerEx that I've still to look at
+
+(#) [?] How to hide a control when its data is null
+		Eg: We dont want to display the canvas until there's no network
+		Ans: The easiest I could find was using a DataTrigger
+        <canvas:FlexGridCanvas x:Name="FlexGridCanvas" Grid.Row="2" DataContext="{Binding OnepNetworkWrapper}" Margin="20">
+            <canvas:FlexGridCanvas.Style>
+                <Style TargetType="{x:Type canvas:FlexGridCanvas}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ElementName=FlexGridCanvas, Path=DataContext}" Value="{x:Null}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </canvas:FlexGridCanvas.Style>
+        </canvas:FlexGridCanvas>
+
+(#) ServiceLocator
+		We created an UndoManager class .. we need the same instance of this class to be accessed everywhere, so we made this a singleton.
+		So far so fine. However, then we began to add the undo-manager's assembly ref everywhere. Ok, but not so nice. It would have been good if we didnt have the coupling.
+		And now imagine if we have more such services, each in its own assembly .. so we will start adding all these assemblies everywhere.
+		And thus came the service locator in picture !
+		Note that ServiceLocator is also considered an Anti-Pattern. Instead, we should try using DI with Constructor Injection
+
+(#) I have few Model classes and their wrappers, and I have commands to create new network, close network, create site
+	At this moment, there is an urgent need for Event Aggregator and Unity container
+
+(#) How to sync view model when there is change in model
+		I think the conventional way would be for the model to implement INPC, and its ViewModel wrapper would subscribe to it
+		There are some limitations to that .. consider collections, or another view model may be interested in this model's properties.
+
+		Enter Managed Properties ..
+		1P has a cool pattern called the Managed Property .. It basically relies on a view being attached to the view model (which is a reasonable expectation)
+		When we have a view with a WPF binding to the VM, an INPC to the View will force getters on the VM, and there we have an opportunity to update the VM with M.
+		Note that this obviates the Model's need to implement INPC.
+		1P's implementation 'SyncWithModel' refreshes all view models (which could potentially be performance degrading .. but is arguably not)
+		More details .. keywords .. getter -> ICommand -> MainUndoRedoSequenceTerminatedEvent -> PublishSync -> ResyncViewModelWithModelEvent -> Refresh
+
+(#) Unity Container and Service Locator and Event Aggregator
+		In the main project (FlexGrid.UI), add ref to Microsoft.Practices.Unity, Unity.Configuration, Unity.Interception, ServiceLocation
+		For event aggregator, we need Microsoft.Practices.Prism
+		[!] At this point, I'm not sure why Unity.Configuration, Unity.Interception are required .. but that's a minor something
+		In App.xaml.cs, the App class is as yet empty.
+		Override OnStartup method and initialize Unity and ServiceLocator and EventAggregator
+		[!] Note that these are in the UI project .. unfortunately, going forward we are going to spill them everywhere
+		This means that a different driver for our ViewModels will also be needing ServiceLocator
+
+		And that's where OnePlanner's half of interfaces came into being !
+			We're using Unity Container for some reasons whatever
+			Container requires Registration, and later Resolution. So for example, I have a service called IUndoManager - its being implemented by a class called UndoManager
+			In my container, I register UndoManager as the implementor of IUndoManager, to be later resolved elsewhere
+			Had I not wanted to de-couple UndoManager everywhere, I would not require the container and hence not required the interface IUndoManager.
+			Of course, its a good practice to remove coupling, and using an interface (with or without a container) is standard practice
+
+		Another question is that if we can resolve using the unity container, then why do we need ServiceLocator ?
+			[Dhirendra] Yes we can get rid of Service Locator and use Unity Container everywhere
+			But we dont want Unity Container's reference everywhere - what if we want to use another container some day
+			So instead we use the Service Locator everywhere, and limit the unity container to App.xaml only
+
+            // [?] Why we require Service Locator, and what does ServiceLocator.SetLocatorProvider() do ?
+            // The ans is a bit round and round :)
+            // In this project, we decided to use UnityContainer as our container for registering and resolving services (we could have used any other, or created our own).
+            // Now, since we want to have the flexibility to change our container at any time in future, we want to de-couple it from the rest of the code
+            // For this, we are using a class called ServiceLocator
+            // {{ Imp
+            // i.e. instead of using container.Resolve<ISomeService>(), we would be using ServiceLocator.Current.GetInstance<ISomeService>();
+            // }} Imp
+            // Notice the 'ServiceLocator.Current' - it returns the current provider, i.e. the provider that will be responsible for resolving services
+            // We want to set the ServiceLocator's provider as UnityContainer. Unless we specify a provider, ServiceLocator.Current will keep returning an AccessViolation exception
+            // 'ServiceLocator.Current' threw an exception of type 'System.AccessViolationException'	Microsoft.Practices.ServiceLocation.IServiceLocator {System.AccessViolationException}
+            // The way to specify ServiceLocator's provider is to call ServiceLocator.SetLocatorProvider() and pass it a delegate that would return an instance of ServiceLocatorImplBase
+            // So we implement this in a class UnityAdapter and the UnityAdapter uses the UnityContainer (passed by us) for doing a resolve.
+            //
+            // And now read again ..
+            //
+            // _container.RegisterType(typeof(IServiceLocator), typeof(UnityAdapter), new ContainerControlledLifetimeManager());
+            // ServiceLocator.SetLocatorProvider(() => this._container.Resolve<IServiceLocator>());
+
+		At this time, my only service is IUndoManager .. so I've replaced UndoManager.Instance everywhere with ServiceLocator.Current.GetInstance<IUndoManager>() and it's working :)
+		..
+		.. Some time later
+		ServiceLocator is an Anti-Pattern in itself .. we should not be spilling it everywhere; instead use DI with C'tor Injection
+		Eg:
+			I have a class called MainWindowViewModel. The class requires UndoManager. So first I made UndoManager as a singleton and then started using UndoManager.Instance.Something()
+			Then I changed this to ServiceLocator.Current.GetInstance<IUndoManager>() whereever required in the MainWindowViewModel class
+			Then I removed ServiceLocator.Current.GetInstance<IUndoManager>() as well from the MainWindowViewModel class, and instead added IUndoManager in the c'tor of this view model.
+			The C'tor gets called by Unity since I've added IUndoManager in Unity, and I must do a 'new' of this view model as below:
+				In MainWindow.xaml, comment out the DataContext statement
+				In MainWindow.xaml.cs, get the instance of MainWindowViewModel from the ServiceLocator (and this is somewhat accepted)
+					var mainWindowViewModel = ServiceLocator.Current.GetInstance<MainWindowViewModel>();
+				Note that I haven't registered MainWindowViewModel with the container, yet it works
+				So when ServiceLocator tries to create an instance of MainWindowViewModel, it looks for the most complex c'tor of MainWindowViewModel
+				In our case, it is the one with IUndoManager. And that's where Unity kicks in the undomanager
+				Our MainWindowViewModel now only has a ref to IUndoManager, and not the UndoManager class
+
+		[?] What is the difference between RegisterType and RegisterInstance
+
+(#) e.Handled = true
+		I made create new network and close network also as un-doable commands, instead of just plain commands
+		This brought to surface 2 problems
+		(1) From the mouse behaviour, I need to do e.Handled = true, otherwise for the case where we do Create New Network twice, there are 2 canvas (rather 3), 
+		and then for Create New Site, the mouse behaviour called command.Execute(point); 3 times (once for each layer in the hierarchy), and so I had to undo 3 times to undo site creation
+		(2) Second thing is that I now need the concept of Sequence .. since I'm calling Close Network from within New Network, it leads to 2 operations on the stack, and I have to undo twice.
+
+
+(#) Record and Play, v0.1 introduced
+		No macro editing .. right now I'm just recording the commands in another queue and executing them again
+		The desired functionality will probably not do this
+		At this point, I am tempted to rename UndoManager as UserActionManager, with Record/StopRecording/PlayRecording in addition to undo and redo

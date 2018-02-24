@@ -1,0 +1,70 @@
+﻿<Window x:Class="FlexGrid.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:canvas="clr-namespace:FlexGrid.UI.Views.Canvas"
+        xmlns:vm="clr-namespace:FlexGrid.ViewModel;assembly=FlexGrid.ViewModel"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+        xmlns:il="clr-namespace:Microsoft.Expression.Interactivity.Layout;assembly=Microsoft.Expression.Interactions"
+        Title="FlexGrid Prototype" Height="600" Width="1200">
+    <!--<Window.DataContext>
+        <vm:MainWindowViewModel />
+    </Window.DataContext>-->
+    <Grid Background="LightGray" >
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Menu Grid.Row="0" IsMainMenu="True" VerticalAlignment="Center">
+            <MenuItem Header="_File">
+                <MenuItem Header="_New Network" Command="{Binding NewNetworkCommand}" />
+                <Separator />
+                <MenuItem Header="_Close Network" Command="{Binding CloseNetworkCommand}" />
+            </MenuItem>
+            
+            <MenuItem Header="_Edit" />
+            <MenuItem Header="_Tools" />
+            <MenuItem Header="_About" />
+            <MenuItem Header="_Debug">
+                <!--This is not working .. have to debug .. TODO : 
+                <MenuItem Header="Create New Site" Command="{Binding CommandCreateNewSite, ElementName=FlexGridCanvas.OnepNetworkWrapper}" />-->
+                <MenuItem Header="_Record" Command="{Binding RecordCommand}" />
+                <MenuItem Header="_Stop Recording" Command="{Binding StopRecordingCommand}" />
+                <MenuItem Header="_Play Recording" Command="{Binding PlayRecordingCommand}" />
+            </MenuItem>
+        </Menu>
+        <ToolBarTray Grid.Row="1">
+            <ToolBar>
+                <Button Content="New" Command="{Binding NewNetworkCommand}" />
+                <Button Content="Close" Command="{Binding CloseNetworkCommand}" />
+            </ToolBar>
+            <ToolBar>
+                <Button Content="Undo" Command="{Binding UndoCommand}" />
+                <Button Content="Redo" Command="{Binding ReDoCommand}" />
+            </ToolBar>
+        </ToolBarTray>
+        
+        <!--These two canvas entries also work, but I would additionally like to show the canvas only if there is a network present-->
+        
+        <!--<canvas:FlexGridCanvas x:Name="FlexGridCanvas" Grid.Row="2" DataContext="{Binding OnepNetworkWrapper}" Background="LightGray" />-->
+        <!--<ContentControl Content="{Binding Path=OnepNetworkWrapper}" Grid.Row="2" Margin="20">
+            <ContentControl.ContentTemplate>
+                <DataTemplate>
+                    <canvas:FlexGridCanvas x:Name="FlexGridCanvas" />
+                </DataTemplate>
+            </ContentControl.ContentTemplate>
+        </ContentControl>-->
+        
+        <canvas:FlexGridCanvas x:Name="FlexGridCanvas" Grid.Row="2" DataContext="{Binding OnepNetworkWrapper}" Margin="4,4,2,2">
+            <canvas:FlexGridCanvas.Style>
+                <Style TargetType="{x:Type canvas:FlexGridCanvas}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ElementName=FlexGridCanvas, Path=DataContext}" Value="{x:Null}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </canvas:FlexGridCanvas.Style>
+        </canvas:FlexGridCanvas>
+    </Grid>
+</Window>
